@@ -13,17 +13,17 @@ export interface IProduct {
 export type FormErrors = Partial<Record<keyof IOrder, string>>;
 
 export interface IOrderForm {
-    payment: string;
+    payment?: string;
     address: string;
     email: string;
     phone: string;
 }
 
 export interface IOrder extends IOrderForm {
-    items: string[];
-    total: number;
+    items?: string[];
+    total?: number;
 }
 
 export interface ICardActions {
-	onClick: (event: MouseEvent) => void;
+	onClick: (event: MouseEvent | string) => void;
 }

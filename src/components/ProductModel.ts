@@ -5,9 +5,6 @@ export class ProductModel extends Model<IProduct> {
     protected items: IProduct[]; // Массив всех товаров
     basket: IProduct[] = []; // Корзина (изначально пустая)
     order: IOrder = { // Объект заказа с начальными значениями
-		items: [],
-		total: null,
-		payment: '',
 		address: '',
 		email: '',
 		phone: '',
@@ -53,6 +50,10 @@ export class ProductModel extends Model<IProduct> {
 	deleteFromBasket(id: string) {
 		this.basket = this.basket.filter((item) => item.id !== id); // Фильтруем массив
 		this.events.emit('items:changed'); // Уведомляем об изменении
+		const item = this.getProduct(id);
+    if (item) {
+        item.statusAddToBasket = false;
+    }
 	}
 
     // Сумма корзины

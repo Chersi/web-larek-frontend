@@ -1,11 +1,13 @@
 import {Form} from "./common/Form";
 import {IEvents} from "./base/events";
+import {ensureElement, formatNumber} from '../utils/utils'
 import {IOrderForm, ICardActions, FormErrors} from "../types/index";
 
 export class Order extends Form<IOrderForm> {
     protected buttonCard: HTMLButtonElement;
 	protected buttonCash: HTMLButtonElement;
 	protected formErrors: FormErrors = {};
+	protected totalPrice: number = 0;
 
     constructor(container: HTMLFormElement, events: IEvents, actions?: ICardActions) {
         super(container, events);
@@ -25,6 +27,15 @@ export class Order extends Form<IOrderForm> {
 				this.selectPaymentMethod = 'cash';
 			});
 		}
+    }
+
+	set total(value: number) {
+        this.totalPrice = value;
+        // Здесь можно добавить логику отображения суммы в интерфейсе
+        const totalElement = ensureElement('.order__total', this.container);
+        if (totalElement) {
+            totalElement.textContent = `Итого: ${formatNumber(value)}`;
+        }
     }
 
     set address(value: string) {

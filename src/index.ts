@@ -69,8 +69,11 @@ events.on('items:changed', () => {
 // Открыли модалку при клике на карточку
 events.on('card:selected', (item: IProduct) => {
 	const card = new Card(cloneTemplate(cardPrevieTemplate), {
-		onClick: () => events.emit('card:addToBasket', item),
-	});
+		onClick: () => {
+				events.emit('card:addToBasket', item)
+	}
+});
+
 	modal.render({
 			content: card.render(item),
             isActive: true
@@ -79,9 +82,16 @@ events.on('card:selected', (item: IProduct) => {
 
 // Добаили товар в корзинку
 events.on('card:addToBasket', (item: Card) => {
-	productModel.addCardToBasket(item);
-	page.counter = productModel.quantityItemsInBasket();
+	if (item.statusAddToBasket) {
+        // Если товар уже в корзине - удаляем его
+        productModel.deleteFromBasket(item.id);
+    } else {
+        // Иначе добавляем в корзину
+        productModel.addCardToBasket(item);
+    }
+    page.counter = productModel.quantityItemsInBasket();
     modal.close();
+
 });
 
 // Открыли корзинку

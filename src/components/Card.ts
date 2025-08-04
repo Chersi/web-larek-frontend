@@ -11,6 +11,7 @@ export class Card extends Component<IProduct> {
     protected cardCategory: HTMLElement;
     protected cardPrice: HTMLElement;
     protected cardButton: HTMLButtonElement;
+    _statusAddToBasket: boolean = false;
 
     constructor(container: HTMLElement, actions?: ICardActions) {
         super(container);
@@ -68,28 +69,29 @@ export class Card extends Component<IProduct> {
     set price(value: number | null) {
         if (value === null || 0) {
             this.setText(this.cardPrice, 'Бесплатно');
+            this.setDisabled(this.cardButton, true);
         } else if (typeof value === 'number' && value > 0) {
             const formatted = value
                 .toString()
                 .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
             this.setText(this.cardPrice, `${formatted} синапсов`);
+            this.setDisabled(this.cardButton, false);
         }
     }
 
 	set statusAddToBasket(value: boolean) {
-		this.setDisabled(this.cardButton, value ? true : false);
-	}
+    // Сохраняем новое значение
+    this._statusAddToBasket = value;
+    // Обновляем текст в зависимости от состояния
+    this.setText(this.cardButton, value ? 'Убрать' : 'В Корзину');
+    }
 
-    // Изменить? 
     set active(value: boolean) {
 		this.toggleClass(this.container, 'modal_active', value);
 	}
 
     render(data: Partial<IProduct>): HTMLElement {
-        if (!('statusAddToBasket' in data)) {
-            data.statusAddToBasket = false;
-        }
 		Object.assign(this as object, data);
-		return this.container;
+        return this.container;
 	}
 }
