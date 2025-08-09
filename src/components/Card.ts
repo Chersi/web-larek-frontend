@@ -30,6 +30,20 @@ export class Card extends Component<IProduct> {
                 this.container.addEventListener('click', actions.onClick);
             }
         }
+
+        Object.defineProperty(this, 'statusAddToBasket', {
+            get() {
+                return this._statusAddToBasket;
+            },
+            set(value: boolean) {
+                this._statusAddToBasket = value;
+                this.updateButtonText();
+            }
+        });
+    }
+    
+    private updateButtonText() {
+        this.setText(this.cardButton, this.statusAddToBasket ? 'Убрать' : 'В Корзину');
     }
 
     set id(value: string) {
@@ -79,11 +93,12 @@ export class Card extends Component<IProduct> {
         }
     }
 
-	set statusAddToBasket(value: boolean) {
-    // Сохраняем новое значение
-    this._statusAddToBasket = value;
-    // Обновляем текст в зависимости от состояния
-    this.setText(this.cardButton, value ? 'Убрать' : 'В Корзину');
+	get statusAddToBasket(): boolean {
+        return this._statusAddToBasket;
+    }
+
+    set statusAddToBasket(value: boolean) {
+        this._statusAddToBasket = value;
     }
 
     set active(value: boolean) {

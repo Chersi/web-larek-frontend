@@ -5,11 +5,13 @@ export class ProductModel extends Model<IProduct> {
     protected items: IProduct[]; // Массив всех товаров
     basket: IProduct[] = []; // Корзина (изначально пустая)
     order: IOrder = { // Объект заказа с начальными значениями
+		payment: '', 
 		address: '',
 		email: '',
 		phone: '',
 	};
     protected formErrors: FormErrors = {}; // Ошибки формы
+	private selectedCard: IProduct | null = null;
 
     // Методы класса:
     //Получить список карточек
@@ -28,6 +30,22 @@ export class ProductModel extends Model<IProduct> {
         this.emitChanges('items:changed', {items: this.items})
     }
 
+	// Метод для сохранения выбранной карточки
+    selectCard(card: IProduct) {
+        this.selectedCard = card;
+        this.triggerRedraw();
+    }
+
+    // Метод для вызова события отрисовки
+    private triggerRedraw() {
+        this.events.emit('card:selected', this.selectedCard);
+    }
+
+    // Получение выбранной карточки
+    getSelectedCard(): IProduct | null {
+        return this.selectedCard;
+    }
+
 	// Добавление товара в корзину
 	addCardToBasket(item: IProduct) {
 		this.basket.push(item); // Добавляем в корзину
@@ -38,7 +56,6 @@ export class ProductModel extends Model<IProduct> {
 	selectedItem(id: string) {
 		const item = this.getProduct(id); // Получаем товар
 		item.statusAddToBasket = !item.statusAddToBasket; // Переключаем флаг statusAddToBasket
-		this.events.emit('items:changed'); // Уведомляем об изменении
 	}
 
     // Количество товара в корзине
@@ -51,9 +68,9 @@ export class ProductModel extends Model<IProduct> {
 		this.basket = this.basket.filter((item) => item.id !== id); // Фильтруем массив
 		this.events.emit('items:changed'); // Уведомляем об изменении
 		const item = this.getProduct(id);
-    if (item) {
-        item.statusAddToBasket = false;
-    }
+    	if (item) {
+        	item.statusAddToBasket = false;
+    	}
 	}
 
     // Сумма корзины
@@ -64,10 +81,7 @@ export class ProductModel extends Model<IProduct> {
 	// Заполнение полей формы заказа
 	setOrderField(field: keyof IOrderForm, value: string) {
 		this.order[field] = value;
-
-		if (this.validateOrder()) {
-			this.events.emit('input:changed', this.order);
-		}
+		this.validateOrder();
 	}
 
     // Получение способа оплаты
@@ -75,16 +89,19 @@ export class ProductModel extends Model<IProduct> {
         return this.order.payment;
     }
 
-     // Перемещение карточек в заказ
-    movingCardsToOrder() {
-        this.order.items = this.basket.map((item) => item.id); // Копируем ID товаров из корзины
-	}
+    // Метод для формирования финального заказа
+    createFinalOrder(): IOrder {
+        return {
+            ...this.order,
+            items: this.basket.map(item => item.id),
+            total: this.basketTotal()
+        };
+    }
 
     // Очистка данных заказа
 	clearOrder() {
+		this.clearBasket();
         this.order ={
-            items: [],
-            total: null,
             payment: '',
             address: '',
             email: '',
@@ -92,31 +109,19 @@ export class ProductModel extends Model<IProduct> {
 	    }
     }
 
-    // Управление включением товара в заказ
-	availabilityInOrder(id: string, isIncluded: boolean) {
-		if (isIncluded) {
-        if (!this.order.items.includes(id)) {// Добавляем уникальный ID
-            this.order.items.push(id);
-        }
-    	} else {
-        	this.order.items = this.order.items.filter(itemId => itemId !== id);// Удаляем ID
-    	}
-	}
-
     // Сброс выбранных товаров в каталоге
 	resetSelectedAll() {
 		this.items.forEach((item) => (item.statusAddToBasket = false)); // Сбрасываем флаг statusAddToBasket у всех товаров
-		this.events.emit('items:changed'); // Уведомляем об изменении состояния
 	}
 
     // Очистка корзины
 	clearBasket() {
-        this.order.items.forEach((id) => {
-			this.availabilityInOrder(id, false); // Убираем из заказа
+        this.basket.forEach((item) => {
+			item.statusAddToBasket = false;
 		});
 		this.resetSelectedAll(); // Сбрасываем выбор
 		this.basket.length = 0; // Очищаем корзину
-		this.events.emit('items:changed'); // Уведомляем об изменении
+		this.emitChanges('items:changed');
 	}
 
 	// Валидация
@@ -141,13 +146,4 @@ export class ProductModel extends Model<IProduct> {
 		this.events.emit('formErrors:change', this.formErrors);
 		return Object.keys(errors).length === 0; // Возвращаем true, если ошибок нет
 	}
-
-	// Управления статусом statusAddToBasket
-	setStatusAddToBasket(id: string, status: boolean) {
-        const item = this.getProduct(id);
-        if (item) {
-            item.statusAddToBasket = status;
-            this.emitChanges('items:changed');
-        }
-    }
 }

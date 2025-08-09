@@ -56,9 +56,12 @@ export class Basket extends Component<IBasket> {
     }
 
     updateSelected() {
-		Array.from(this._list.children).forEach(
-			(item, index) =>
-				(item.querySelector(`.basket__item-index`)!.textContent = (index + 1).toString()));
+		Array.from(this._list.children).forEach((item, index) => {
+            const indexElement = item.querySelector('.basket__item-index');
+            if (indexElement) {
+                indexElement.textContent = (index + 1).toString();
+            }
+        });
 	}
 
     disableButton() {

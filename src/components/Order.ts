@@ -8,12 +8,14 @@ export class Order extends Form<IOrderForm> {
 	protected buttonCash: HTMLButtonElement;
 	protected formErrors: FormErrors = {};
 	protected totalPrice: number = 0;
+	protected totalElement: HTMLElement | null;
 
     constructor(container: HTMLFormElement, events: IEvents, actions?: ICardActions) {
         super(container, events);
 
         this.buttonCard = container.elements.namedItem('card') as HTMLButtonElement;
 		this.buttonCash = container.elements.namedItem('cash') as HTMLButtonElement;
+		this.totalElement = this.container.querySelector('.order__total');
 
         if (this.buttonCard) {
 			this.buttonCard.addEventListener('click', (event: MouseEvent) => {
@@ -32,9 +34,8 @@ export class Order extends Form<IOrderForm> {
 	set total(value: number) {
         this.totalPrice = value;
         // Здесь можно добавить логику отображения суммы в интерфейсе
-        const totalElement = ensureElement('.order__total', this.container);
-        if (totalElement) {
-            totalElement.textContent = `Итого: ${formatNumber(value)}`;
+        if (this.totalElement) {
+            this.totalElement.textContent = `Итого: ${formatNumber(value)}`;
         }
     }
 

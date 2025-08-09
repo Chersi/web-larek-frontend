@@ -56,8 +56,8 @@ api.getCardList()
 events.on('items:changed', () => {
     const itemsHTMLArray = productModel.getProducts().map(item => 
         new Card(cloneTemplate(cardCatalogTemplate), {
-                onClick: () => events.emit('card:selected', item)
-        })
+                onClick: () => productModel.selectCard(item) 
+        }) 
     .render(item));
     page.render({
         catalog: itemsHTMLArray,
@@ -70,9 +70,15 @@ events.on('items:changed', () => {
 events.on('card:selected', (item: IProduct) => {
 	const card = new Card(cloneTemplate(cardPrevieTemplate), {
 		onClick: () => {
-				events.emit('card:addToBasket', item)
-	}
-});
+			console.log(card.statusAddToBasket)
+			if (card.statusAddToBasket) {
+                events.emit('card:deleteFromBasket', item);
+				modal.close();
+            } else {
+                events.emit('card:addToBasket', item);
+            }
+        }
+    });
 
 	modal.render({
 			content: card.render(item),
@@ -82,13 +88,7 @@ events.on('card:selected', (item: IProduct) => {
 
 // Добаили товар в корзинку
 events.on('card:addToBasket', (item: Card) => {
-	if (item.statusAddToBasket) {
-        // Если товар уже в корзине - удаляем его
-        productModel.deleteFromBasket(item.id);
-    } else {
-        // Иначе добавляем в корзину
-        productModel.addCardToBasket(item);
-    }
+	productModel.addCardToBasket(item);
     page.counter = productModel.quantityItemsInBasket();
     modal.close();
 
@@ -115,23 +115,18 @@ events.on('basket:open', () => {
 		}),
 		isActive: true,
 	});
+	basket.updateSelected();
 });
 
 // Удалили карточку из корзины
 events.on('card:deleteFromBasket', (item: Card) => {
 	productModel.deleteFromBasket(item.id);
-	item.statusAddToBasket = false;
-	basket.total = productModel.basketTotal();
-	page.counter = productModel.quantityItemsInBasket(),
+    page.counter = productModel.quantityItemsInBasket();
 	basket.updateSelected();
-	if (!productModel.basket.length) {
-		basket.disableButton();
-	}
 });
 
 // Открыли форму заказа
 events.on('order:creation', () => {
-	events.emit('input:changed');
 	modal.render({
 		content: order.render({
 			address: '',
@@ -141,7 +136,6 @@ events.on('order:creation', () => {
 		}),
 		isActive: true,
 	});
-	events.emit('input:changed');
 });
 
 // Изменили поле фомы
@@ -149,7 +143,6 @@ events.on(
 	/^order\..*:change/,
 	(data: { field: keyof IOrderForm; value: string }) => {
 		productModel.setOrderField(data.field, data.value);
-        productModel.getPayMethod();
 	}
 );
 
@@ -172,8 +165,7 @@ events.on('formErrors:change', (errors: Partial<IOrderForm>) => {
 
 // ОТкрыли заполнение контактов
 events.on('order:submit', () => {
-	productModel.order.total = productModel.basketTotal();
-	productModel.movingCardsToOrder();
+	productModel.createFinalOrder();
 
 	modal.render({
 		content: contacts.render({
@@ -197,8 +189,9 @@ events.on(
 
 // Заполнение формы с контактными данными
 events.on('contacts:submit', () => {
+	const finalOrder = productModel.createFinalOrder();
 	api
-		.postProductOrder(productModel.order)
+		.postProductOrder(finalOrder)
 		.then((result) => {
 			productModel.clearOrder();
 			productModel.clearBasket();
@@ -210,7 +203,7 @@ events.on('contacts:submit', () => {
 				isActive: true,
 			});
 		})
-		.catch((err) => console.log(err));
+		.catch((err) => console.error('Ошибка отправки заказа:', err));
 });
 
 // Блокировка прокрутки страницы
