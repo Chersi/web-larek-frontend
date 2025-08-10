@@ -106,8 +106,4 @@ export class CardBasket extends Component<IBasket> {
     const formattedValue = value === null ? 'Бесплатно' : `${formatNumber(value)} синапсов`;
     this.setText(this.cardPrice, formattedValue);
     }
-
-	set selected(value: number) {
-		this.setText(this.basketItemIndex, (value++).toString());
-	}
 }

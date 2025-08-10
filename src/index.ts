@@ -91,38 +91,42 @@ events.on('card:addToBasket', (item: Card) => {
 	productModel.addCardToBasket(item);
     page.counter = productModel.quantityItemsInBasket();
     modal.close();
-
+	events.emit('basket:change');
 });
 
 // Открыли корзинку
 events.on('basket:open', () => {
-	const basketCatalog = productModel.basket.map((item, index) => {
-		const basketItem = new CardBasket(cloneTemplate(cardBasketTemplate), {
-			onClick: () => events.emit('card:deleteFromBasket', item),
-		});
-
-		return basketItem.render({
-			title: item.title,
-			price: item.price,
-			selected: index + 1,
-		});
-	});
-
 	modal.render({
 		content: basket.render({
-			items: basketCatalog,
 			total: productModel.basketTotal(),
 		}),
 		isActive: true,
 	});
-	basket.updateSelected();
+});
+
+// Обновление списка корзины
+events.on('basket:change', () => {
+    const basketCatalog = productModel.basket.map((item, index) => {
+        const basketItem = new CardBasket(cloneTemplate(cardBasketTemplate), {
+            onClick: () => events.emit('card:deleteFromBasket', item),
+        });
+
+        return basketItem.render({
+            title: item.title,
+            price: item.price,
+            selected: index + 1,
+        });
+    });
+
+    basket.items = basketCatalog;
+    basket.updateSelected();
 });
 
 // Удалили карточку из корзины
 events.on('card:deleteFromBasket', (item: Card) => {
 	productModel.deleteFromBasket(item.id);
     page.counter = productModel.quantityItemsInBasket();
-	basket.updateSelected();
+	events.emit('basket:change');
 });
 
 // Открыли форму заказа
